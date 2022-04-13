@@ -1,7 +1,7 @@
 
 #include <pybind11/eigen.h>
-#include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "gaussian_classify.hpp"
 
@@ -9,7 +9,9 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(gda_bindings, module) {
   module.doc() = "Gaussian Discriminant Analysis library";
-  py::class_<GaussianParams> gauss_params(module, "GaussianParams");
+  py::class_<GaussianParams> gauss_params(
+      module, "GaussianParams",
+      "Structure with the parameters for a multivariate Gaussian distribution");
   gauss_params.def(py::init<int>(), "Constructs an isotropic Guassian");
   gauss_params.def(py::init<Vec, Mat>(),
                    "Generic parameters for a multivariate Guassian");
@@ -24,7 +26,12 @@ PYBIND11_MODULE(gda_bindings, module) {
   gauss_mix.def(py::init<std::vector<std::pair<double, GaussianParams>>>(),
                 "Constructs a Gaussian mixture model with these Gaussians and "
                 "their associated weights");
-  gauss_mix.def(
-      "__call__", [](GaussianMix &gd) { return gd(); },
-      "Samples the distribution");
+  // gauss_mix.def(
+  //     "__call__", [](GaussianMix &gd) { return gd(); },
+  //     "Samples the distribution");
+  gauss_mix.def("__call__",
+                static_cast<Vec (GaussianMix::*)()>(&GaussianMix::operator()),
+                "Samples the distribution");
+  gauss_mix.def("gaussians", &GaussianMix::gaussians,
+                "The list of Gaussians used in the mixture model");
 }

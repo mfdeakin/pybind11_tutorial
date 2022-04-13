@@ -13,12 +13,12 @@ using Mat = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
 struct GaussianParams {
   GaussianParams(int dim);
   GaussianParams(const Vec &mean_, const Mat cov);
-	size_t size() const { return mean.rows(); }
+  size_t size() const { return mean.rows(); }
 
-	Vec mean;
+  Vec mean;
   // We don't directly store the eigenvalues; the lengths of these eigenvectors
   // specify the variance in their directions
-	Mat cov_eigvecs;
+  Mat cov_eigvecs;
 };
 
 class GaussianDist {
@@ -34,19 +34,20 @@ public:
     return gauss.cov_eigvecs * m + gauss.mean;
   }
 
-  Vec operator()() {
-		return (*this)(rng);
-  }
+  Vec operator()() { return (*this)(rng); }
 
 private:
   GaussianParams gauss;
   std::normal_distribution<> n_dist;
-	std::mt19937_64 rng;
+  std::mt19937_64 rng;
 };
 
 class GaussianMix {
 public:
   GaussianMix(std::vector<std::pair<double, GaussianParams>> params);
+
+  GaussianMix(const GaussianMix &) = delete;
+  GaussianMix &operator=(const GaussianMix &) = delete;
 
   template <class Generator> Vec operator()(Generator &g) {
     const double g_selection = urd_dist(g);
@@ -61,10 +62,18 @@ public:
         return gauss.cov_eigvecs * m + gauss.mean;
       }
     }
+    auto [weight, gauss] = gauss_mix.back();
+    Vec m(gauss.size());
+    for (int i = 0; i < gauss.size(); ++i) {
+      m(i) = n_dist(g);
+    }
+    return gauss.cov_eigvecs * m + gauss.mean;
   }
 
-  Vec operator()() {
-		return (*this)(rng);
+  Vec operator()() { return (*this)(rng); }
+
+  const std::vector<std::pair<double, GaussianParams>> &gaussians() const {
+    return gauss_mix;
   }
 
 private:
@@ -72,7 +81,7 @@ private:
 
   std::uniform_real_distribution<double> urd_dist;
   std::normal_distribution<> n_dist;
-	std::mt19937_64 rng;
+  std::mt19937_64 rng;
 };
 
 #endif // GAUSSIAN_CLASSIFY_HPP
