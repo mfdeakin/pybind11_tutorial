@@ -4,33 +4,29 @@
 #include <cmath>
 #include <stdexcept>
 
-GaussianParams::GaussianParams(int dim)
-    : mean(arma::vec(dim, arma::fill::zeros)),
-      cov_eigvecs(dim, dim, arma::fill::eye) {}
+#include <Eigen/Eigenvalues>
 
-GaussianParams::GaussianParams(const arma::vec &mean_, const arma::mat cov)
+GaussianParams::GaussianParams(int dim)
+    : mean(Vec(dim, 1)), cov_eigvecs(dim, dim) {}
+
+GaussianParams::GaussianParams(const Vec &mean_, const Mat cov)
     : mean(mean_), cov_eigvecs() {
-  if (!cov.is_symmetric()) {
-    throw std::runtime_error("Covariance matrix is not symmetric");
-  }
-  arma::vec eigvals;
-  bool err = arma::eig_sym(eigvals, cov_eigvecs, cov);
-  if (err) {
-    throw std::runtime_error("Error decomposing the covariance matrix");
-  }
-  for (int i = 0; i < mean.n_elem; ++i) {
-    arma::vec col = cov_eigvecs.col(i);
-    const double norm = arma::norm(col);
-    col *= eigvals(i) / norm;
+	Eigen::EigenSolver<Mat> solver(cov);
+	cov_eigvecs = solver.eigenvectors().real();
+  const Vec eigvals = solver.eigenvalues().real();
+  for (int i = 0; i < size(); ++i) {
+    auto &&col = cov_eigvecs.col(i);
+		col.normalize();
+    col *= eigvals(i);
   }
 }
 
-GaussianDist::GaussianDist(int dim) : gauss(dim), n_dist() {}
-GaussianDist::GaussianDist(const arma::vec &mean, const arma::mat cov)
-    : gauss(mean, cov), n_dist() {}
+GaussianDist::GaussianDist(int dim) : gauss(dim), n_dist(), rng(155) {}
+GaussianDist::GaussianDist(const Vec &mean, const Mat cov)
+    : gauss(mean, cov), n_dist(), rng(155) {}
 
 GaussianMix::GaussianMix(std::vector<std::pair<double, GaussianParams>> params)
-    : gauss_mix(), urd_dist(0.0, 1.0), n_dist() {
+    : gauss_mix(), urd_dist(0.0, 1.0), n_dist(), rng(155) {
   double tot_weight = 0.0;
   for (auto [w, _] : params) {
     tot_weight += w;

@@ -3,8 +3,12 @@ cmake_minimum_required(VERSION 3.13.0)
 
 project(gda)
 
-find_package(Armadillo REQUIRED)
-# find_package(pybind11 CONFIG)
+find_package(Eigen3 REQUIRED)
 
-add_library(GaussianDist SHARED src/gaussian_classify.cpp)
-target_include_directories(GaussianDist PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${ARMADILLO_INCLUDE_DIRS})
+add_library(GaussianClassify SHARED src/gaussian_classify.cpp)
+target_include_directories(GaussianClassify PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${EIGEN3_INCLUDE_DIRS})
+
+find_package(pybind11 CONFIG)
+
+pybind11_add_module(gda_bindings pybindings/pybindings.cxx)
+target_link_libraries(gda_bindings PUBLIC GaussianClassify)
