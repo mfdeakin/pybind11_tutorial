@@ -7,18 +7,12 @@
 #include <Eigen/Eigenvalues>
 
 GaussianParams::GaussianParams(int dim)
-    : mean(Vec(dim, 1)), cov_eigvecs(dim, dim) {}
+  : mean(Vec(dim, 1)), cov_sqrt(Mat::Identity(dim, dim)) {}
 
 GaussianParams::GaussianParams(const Vec &mean_, const Mat cov)
-    : mean(mean_), cov_eigvecs() {
-  Eigen::EigenSolver<Mat> solver(cov);
-  cov_eigvecs = solver.eigenvectors().real();
-  const Vec eigvals = solver.eigenvalues().real();
-  for (int i = 0; i < size(); ++i) {
-    auto &&col = cov_eigvecs.col(i);
-    col.normalize();
-    col *= eigvals(i);
-  }
+  : mean(mean_), cov_sqrt() {
+  Eigen::SelfAdjointEigenSolver<Mat> solver(cov);
+  cov_sqrt = solver.operatorSqrt();
 }
 
 GaussianDist::GaussianDist(int dim) : gauss(dim), n_dist(), rng(155) {}

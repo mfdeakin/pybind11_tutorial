@@ -18,7 +18,7 @@ struct GaussianParams {
   Vec mean;
   // We don't directly store the eigenvalues; the lengths of these eigenvectors
   // specify the variance in their directions
-  Mat cov_eigvecs;
+  Mat cov_sqrt;
 };
 
 class GaussianDist {
@@ -31,7 +31,7 @@ public:
     for (int i = 0; i < gauss.size(); ++i) {
       m(i) = n_dist(g);
     }
-    return gauss.cov_eigvecs * m + gauss.mean;
+    return gauss.cov_sqrt * m + gauss.mean;
   }
 
   Vec operator()() { return (*this)(rng); }
@@ -59,7 +59,7 @@ public:
         for (int i = 0; i < gauss.size(); ++i) {
           m(i) = n_dist(g);
         }
-        return gauss.cov_eigvecs * m + gauss.mean;
+        return gauss.cov_sqrt * m + gauss.mean;
       }
     }
     auto [weight, gauss] = gauss_mix.back();
@@ -67,7 +67,7 @@ public:
     for (int i = 0; i < gauss.size(); ++i) {
       m(i) = n_dist(g);
     }
-    return gauss.cov_eigvecs * m + gauss.mean;
+    return gauss.cov_sqrt * m + gauss.mean;
   }
 
   Vec operator()() { return (*this)(rng); }
